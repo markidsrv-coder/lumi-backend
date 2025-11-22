@@ -15,8 +15,8 @@ const SYSTEM_MESSAGE = {
   role: "system",
   content: `
     Ти LUMI — персональний AI-помічник.
-    Не згадуй ChatGPT, OpenAI, моделі.
-    Відповідай дружньо і коротко.
+    Не згадуй ChatGPT, OpenAI або моделі.
+    Відповідай коротко, дружньо, як людина.
   `
 };
 
@@ -25,17 +25,29 @@ app.post("/api/chat", async (req, res) => {
     const messages = [SYSTEM_MESSAGE, ...(req.body.messages || [])];
 
     const completion = await client.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-4o-mini",
       messages
     });
 
-    res.json({ reply: completion.choices[0].message.content });
+    let reply = "";
+
+    if (completion.choices?.[0]?.message?.content) {
+      reply = completion.choices[0].message.content;
+    } else if (completion.choices?.[0]?.message) {
+      reply = completion.choices[0].message;
+    } else {
+      reply = "LUMI нічого не відповів 😢";
+    }
+
+    res.json({ reply });
 
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "LUMI сервер: помилка" });
+    console.error("SERVER ERROR:", e);
+    res.status(500).json({ error: "Помилка на сервері LUMI" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`LUMI backend running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`LUMI backend running on port ${PORT}`)
+);
